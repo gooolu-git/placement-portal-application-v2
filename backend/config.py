@@ -10,10 +10,10 @@ class Config:
     
     # 1. Security Keys (JWT & Flask Sessions)
     SECRET_KEY = os.environ.get('SECRET_KEY', 'default-dev-fallback-secret-key')
-    # JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'default-dev-fallback-jwt-key')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'default-dev-fallback-jwt-key')
     
     # Token expiration time (2 hours for VueJS sessions)
-    # JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=2)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=2)
     
     # 2. Database Configuration (SQLite)
     # If DATABASE_URL is not set in .env, it defaults to creating 'placement_portal.db' in the backend root

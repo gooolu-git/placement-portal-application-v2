@@ -1,11 +1,16 @@
 from flask import Flask
 from flask_restful import Api, Resource
 from models import db, User
+from flask_jwt_extended import JWTManager
 from config import Config
+from common_api import HandleLogin , HandleRegister
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
+api = Api(app)
 db.init_app(app)
+jwt = JWTManager(app)
 
 # Database initialization
 with app.app_context():
@@ -27,6 +32,8 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
         print("Programmatic Admin successfully seeded!")
+api.add_resource(HandleLogin,"/login")
+api.add_resource(HandleRegister,"/register")
 
 @app.route('/')
 def home():
