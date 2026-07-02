@@ -46,7 +46,7 @@ class HandleLogin(Resource):
             return {"status":"error", "message":"invalid Usernamer or Password"},400
         if not user.is_approved:
             return {"status":"error", "message":"Yet Not Verified by Admin"},400
-        if not user.is_blacklisted:
+        if user.is_blacklisted:
             return {"status":"error", "message":"You are Blocked by Admin"},400
         token = generate_token(user.id, user.username, user.role)
         return {

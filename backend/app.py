@@ -4,6 +4,7 @@ from models import db, User
 from flask_jwt_extended import JWTManager
 from config import Config
 from common_api import HandleLogin , HandleRegister
+from api.admin_api import GetallUsers
 
 
 app = Flask(__name__)
@@ -34,6 +35,10 @@ with app.app_context():
         print("Programmatic Admin successfully seeded!")
 api.add_resource(HandleLogin,"/login")
 api.add_resource(HandleRegister,"/register")
+
+#===========admin_rotues_registration=============
+api.add_resource(GetallUsers,'/admin/users')
+
 
 @app.route('/')
 def home():

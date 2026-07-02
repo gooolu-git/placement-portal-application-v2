@@ -17,33 +17,34 @@ def generate_token(user_id, username, role):
 #========================================custom decorators===================================
 
 
-
 def admin_required(f):
     @wraps(f)
-    @jwt_required() # Automatically validates token headers, signature, and expiration
-    def decorated(current_user, *args, **kwargs):
-        if current_user['role'] != 'admin':
+    @jwt_required()  # Ensures a valid JWT exists first
+    def decorated(*args, **kwargs):
+        claims = get_jwt()  # Read data directly out of the verified token
+        if claims.get("role") != 'admin':
             return {"status": "error", "message": "Forbidden. You are not Admin"}, 403
-        return f(current_user, *args, **kwargs)
+        return f(*args, **kwargs)
     return decorated
 
 
 def company_required(f):
     @wraps(f)
     @jwt_required()
-    def decorated(current_user, *args, **kwargs):
-        if current_user['role'] != 'company':
+    def decorated(*args, **kwargs):
+        claims = get_jwt()
+        if claims.get("role") != 'company':
             return {"status": "error", "message": "Forbidden. Company Person Required"}, 403
-        return f(current_user, *args, **kwargs)
+        return f(*args, **kwargs)
     return decorated
 
 
 def student_required(f):
-    """Restricts route access strictly to registered Students"""
     @wraps(f)
     @jwt_required()
-    def decorated(current_user, *args, **kwargs):
-        if current_user['role'] != 'student':
+    def decorated(*args, **kwargs):
+        claims = get_jwt()
+        if claims.get("role") != 'student':
             return {"status": "error", "message": "Forbidden. Students Access Only"}, 403
-        return f(current_user, *args, **kwargs)
+        return f(*args, **kwargs)
     return decorated
