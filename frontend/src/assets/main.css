@@ -1,0 +1,23 @@
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* Prevents padding from adding to total width */
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden; /* Safely hides the horizontal scroll bar */
+  margin: 0;
+  padding: 0;
+}
+
+
+#app {
+  width: 100%;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+}
