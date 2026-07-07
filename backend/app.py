@@ -3,8 +3,8 @@ from flask_restful import Api, Resource
 from models import db, User
 from flask_jwt_extended import JWTManager
 from config import Config
-from common_api import HandleLogin , HandleRegister , HandleUinqueEmail,HandleUinqueUserName
-from api.admin_api import GetallUsers
+from common_api import HandleLogin , HandleRegister , HandleUinqueEmail,HandleUinqueUserName 
+from api.admin_api import GetallUsers,GetallUnactiveUSers,ApproveUnapproveUser,BlockUnblockUser,GetUserDetails,GetCompanyFullDetails,GetStudentFullDetails,AdminDriveDetail,AdminManageDrives
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -41,8 +41,15 @@ api.add_resource(HandleUinqueEmail,'/uniquemail')
 api.add_resource(HandleUinqueUserName,'/uniqueusername')
 
 #===========admin_rotues_registration=============
-api.add_resource(GetallUsers,'/admin/users')
-
+api.add_resource(GetallUsers, '/admin/users')
+api.add_resource(GetallUnactiveUSers, '/admin/unactive-users')
+api.add_resource(ApproveUnapproveUser, '/admin/approve/<int:user_id>')
+api.add_resource(BlockUnblockUser, '/admin/block/<int:user_id>')
+api.add_resource(GetUserDetails, '/admin/user/<int:user_id>')
+api.add_resource(GetCompanyFullDetails, '/admin/company/<int:user_id>')
+api.add_resource(GetStudentFullDetails, '/admin/student/<int:user_id>')
+api.add_resource(AdminManageDrives, '/admin/drives')
+api.add_resource(AdminDriveDetail, '/admin/drive/<int:drive_id>')
 
 @app.route('/')
 def home():

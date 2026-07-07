@@ -110,7 +110,44 @@ const router = createRouter({
       name: 'admin-dashboard',
       component: () => import('../views/AdminDashboard.vue'),
       meta: { requiresAuth: true, role: 'admin' }
-    }
+    },
+    {
+      path: '/admin/companies',
+      name: 'admin-dashboard-companies',
+      component: () => import('../views/CompanyDirectory.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/students',
+      name: 'admin-dashboard-students',
+      component: () => import('../views/StudentDirectory.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/company/:id',
+      name: 'CompanyProfile',
+      component: () => import('../views/CompanyProfile.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/student/:id',
+      name: 'StudentProfile',
+      component: () => import('../views/StudentProfile.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/drives',
+      name: 'DriveDirectory',
+      component: () => import('../views/DriveDirectory.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+      path: '/admin/drives/:id',
+      name: 'DriveProfile',
+      component: () => import('../views/DriveProfile.vue'),
+      meta: { requiresAuth: true, role: 'admin' }
+    },
+    
 
   ],
 })

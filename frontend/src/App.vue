@@ -5,7 +5,7 @@ import NotificationToast from '@/components/NotificationToast.vue'
 </script>
 
 <template>
-  <div style="font-family: 'Inter', sans-serif; background-color: #f8fafc; min-height: 100vh;">
+  <div style="font-family: 'Inter', sans-serif; background-color: #f8fafc;">
     <!-- Global Dynamic Navbar -->
     <Navbar />
     <NotificationToast/>

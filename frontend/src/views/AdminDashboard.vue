@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { toast } from '@/utils/toast'
 
 const authStore = useAuthStore()
 
@@ -20,22 +21,22 @@ const searchQuery = ref('')
 const activeTab = ref('companies') // 'companies' | 'students' | 'drives'
 const isLoading = ref(true)
 
-// Fetch all dashboard stats and pending records
+// Fetch all dashboard stats and pending records from your backend updates
 const fetchDashboardData = async () => {
   isLoading.value = true
   try {
-    // 1. Fetch unapproved pending users
+    // 1. Fetch unapproved pending users (Uses updated unactive-users payload key)
     const resUnactive = await fetch('http://localhost:5000/admin/unactive-users', {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
     const dataUnactive = await resUnactive.json()
     if (dataUnactive.status === 'success') {
-      // Separate users into respective categories manually based on role
+      // Filter array lists reactively by user role
       pendingCompanies.value = dataUnactive.data.filter(u => u.role === 'company')
       pendingStudents.value = dataUnactive.data.filter(u => u.role === 'student')
     }
 
-    // 2. Fetch active approved items to compute summaries/KPI badges
+    // 2. Fetch active approved items to compute counters
     const resActive = await fetch('http://localhost:5000/admin/users', {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
@@ -46,20 +47,19 @@ const fetchDashboardData = async () => {
       totalStudents.value = dataActive.data.filter(u => u.role === 'student').length
     }
 
-    // Mock/placeholder numbers for Drives and Applications until endpoints are exposed
-    totalDrives.value = 12 
-    totalApplications.value = 48
-    pendingPlacementDrives.value = [
-      { id: 1, job_title: 'Software Engineer Intern', company_id: 104, deadline: '24 Jul, 2026' }
-    ]
+    // Placeholder counters for Drives and Applications
+    totalDrives.value = pendingPlacementDrives.value.length
+    totalApplications.value = 0
+    pendingPlacementDrives.value = []
+    
   } catch (err) {
-    console.error('Error connecting to operational endpoints:', err)
+    toast.error('Sync Error', 'Could not fetch records from the server.')
   } finally {
     isLoading.value = false
   }
 }
 
-// Action Trigger Methods
+// User Action Pipeline
 const handleUserApproval = async (userId, newStatus) => {
   try {
     const res = await fetch(`http://localhost:5000/admin/approve/${userId}`, {
@@ -71,13 +71,17 @@ const handleUserApproval = async (userId, newStatus) => {
       body: JSON.stringify({ is_approved: newStatus })
     })
     const data = await res.json()
-    if (data.status === 'success') {
-      // Instant view sync optimization without reloading full page
+    if (res.ok && data.status === 'success') {
+      toast.success('Status Updated', data.action || 'User status updated.')
+      // Immediate structural array filtering without page refreshes
       pendingCompanies.value = pendingCompanies.value.filter(u => u.id !== userId)
       pendingStudents.value = pendingStudents.value.filter(u => u.id !== userId)
+      fetchDashboardData() // Recalculate summary metrics row
+    } else {
+      toast.error('Operation Failed', data.message || 'Could not update user.')
     }
   } catch (err) {
-    console.error(err)
+    toast.error('Network Error', 'Server connection failure.')
   }
 }
 
@@ -92,19 +96,24 @@ const handleUserBlacklist = async (userId, blockStatus) => {
       body: JSON.stringify({ is_blocked: blockStatus })
     })
     const data = await res.json()
-    if (data.status === 'success' && blockStatus) {
+    if (res.ok && data.status === 'success') {
+      toast.success('User Flagged', data.action || 'User blacklist rule set.')
       pendingCompanies.value = pendingCompanies.value.filter(u => u.id !== userId)
       pendingStudents.value = pendingStudents.value.filter(u => u.id !== userId)
+      fetchDashboardData() // Recalculate summary metrics row
+    } else {
+      toast.error('Operation Failed', data.message || 'Could not update blacklist configuration.')
     }
   } catch (err) {
-    console.error(err)
+    toast.error('Network Error', 'Server connection failure.')
   }
 }
 
-// Client side multi-attribute filter computations
+// Reactive Filters Matching Text Queries
 const filteredCompanies = computed(() => {
   return pendingCompanies.value.filter(u => 
     u.company_profile?.company_name?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    u.name?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     String(u.id).includes(searchQuery.value)
   )
 })
@@ -129,8 +138,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="container py-5 mt-4 bg-light min-vh-100">
-    <!-- Header Title block -->
+  <div class="container py-5 mt-5 bg-light ">
+    <!-- Header Controls Grid -->
     <div class="row mb-5 align-items-center">
       <div class="col-lg-7">
         <h2 class="fw-bold text-dark mb-1">Admin <span class="text-primary">Console</span></h2>
@@ -160,7 +169,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Overview Statistics Summary Widgets Row -->
+    <!-- Quick Stats Cards Summary Block -->
     <div class="row g-3 mb-5">
       <div class="col-md-3">
         <div class="card border-0 border-start border-primary border-4 shadow-sm h-100 bg-white">
@@ -208,7 +217,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Verification Card Canvas Block -->
+    <!-- Registration Approvals Card Wrapper -->
     <div class="card border-0 shadow-sm overflow-hidden bg-white rounded-3">
       <div class="bg-light px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
         <h6 class="fw-bold mb-0 text-dark">
@@ -217,7 +226,7 @@ onMounted(() => {
         <span class="badge bg-primary rounded-pill px-3">Verified Users: {{ totalApprovedCount }}</span>
       </div>
       
-      <!-- Nav Navigation Tab Underlines -->
+      <!-- Interactive Underlined Nav Tabs -->
       <ul class="nav nav-underline px-4 pt-2 border-bottom" role="tablist">
         <li class="nav-item">
           <button 
@@ -248,14 +257,15 @@ onMounted(() => {
         </li>
       </ul>
 
-      <!-- Inner Tab Content Window Container -->
+      <!-- Central Table Canvas -->
       <div class="card-body p-4">
         <div v-if="isLoading" class="text-center py-5">
           <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+          <p class="text-muted small mt-2">Loading verification logs...</p>
         </div>
 
         <template v-else>
-          <!-- TABPANEL 1: COMPANIES -->
+          <!-- CATEGORY MODULE 1: COMPANIES -->
           <div v-if="activeTab === 'companies'" class="table-responsive rounded-3 border">
             <table class="table align-middle mb-0">
               <thead class="table-light">
@@ -271,7 +281,7 @@ onMounted(() => {
                     <div class="d-flex align-items-center">
                       <img :src="`https://api.dicebear.com/7.x/identicon/svg?seed=${user.company_profile?.company_name || 'Corp'}`" class="rounded-circle border border-2 p-1 me-3" width="40" />
                       <div>
-                        <div class="fw-bold text-dark">{{ user.company_profile?.company_name || 'N/A' }}</div>
+                        <div class="fw-bold text-dark">{{ user.company_profile?.company_name || user.name }}</div>
                         <div class="small text-muted">ID: {{ user.id }}</div>
                       </div>
                     </div>
@@ -291,7 +301,7 @@ onMounted(() => {
             </table>
           </div>
 
-          <!-- TABPANEL 2: STUDENTS -->
+          <!-- CATEGORY MODULE 2: STUDENTS -->
           <div v-if="activeTab === 'students'" class="table-responsive rounded-3 border">
             <table class="table align-middle mb-0">
               <thead class="table-light">
@@ -340,7 +350,7 @@ onMounted(() => {
             </table>
           </div>
 
-          <!-- TABPANEL 3: PLACEMENT DRIVES -->
+          <!-- CATEGORY MODULE 3: DRIVES -->
           <div v-if="activeTab === 'drives'" class="table-responsive rounded-3 border">
             <table class="table align-middle mb-0">
               <thead class="table-light">

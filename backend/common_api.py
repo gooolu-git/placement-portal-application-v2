@@ -3,7 +3,7 @@ import base64
 from werkzeug.utils import secure_filename
 from flask_restful import Resource
 from flask import request , current_app
-from models import db , User , Student
+from models import db , User , Student , Company
 from auth import generate_token 
 
 
