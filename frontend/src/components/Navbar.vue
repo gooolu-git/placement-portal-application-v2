@@ -50,9 +50,11 @@ const handleLogout = () => {
             </li>
 
             <!-- Company Links -->
+             
             <li v-if="authStore.user?.role === 'company'" class="nav-item">
-              <RouterLink class="nav-link nav-link-custom text-dark px-3 fw-semibold" to="/company/dashboard">Active Drives</RouterLink>
+              <RouterLink class="nav-link nav-link-custom text-dark px-3 fw-semibold" to="/company/dashboard">Dashboard</RouterLink>
             </li>
+             
             <li v-if="authStore.user?.role === 'company'" class="nav-item">
               <RouterLink class="nav-link nav-link-custom text-dark px-3 fw-semibold" to="/company/past-drives">past Drives</RouterLink>
             </li>

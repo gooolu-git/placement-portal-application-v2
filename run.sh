@@ -24,10 +24,11 @@ fi
 
 # Activate and Install
 source venv/bin/activate
-if [ -f "requirements.txt" ]; then
-    echo "Installing backend dependencies..."
-    pip install -r requirements.txt
-fi
+#download dependencies
+# if [ -f "requirements.txt" ]; then
+#     echo "Installing backend dependencies..."
+#     pip install -r requirements.txt
+# fi
 
 # Start Flask in the background
 echo "Starting Flask on port 5000..."
@@ -40,10 +41,10 @@ echo "--- Setting up Frontend ---"
 cd frontend || { echo "Error: 'frontend' directory not found."; exit 1; }
 
 # Install modules if not present
-if [ ! -d "node_modules" ]; then
-    echo "Installing frontend dependencies..."
-    npm install
-fi
+# if [ ! -d "node_modules" ]; then
+#     echo "Installing frontend dependencies..."
+#     npm install
+# fi
 
 # Start Frontend
 echo "Starting Frontend..."

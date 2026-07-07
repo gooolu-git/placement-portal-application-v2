@@ -56,6 +56,7 @@ class Company(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "company_name": self.company_name,
+            "hr_name":self.user.name,
             "hr_contact": self.hr_contact,
             "website": self.website,
             "is_approved": self.user.is_approved if self.user else False,

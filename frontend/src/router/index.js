@@ -147,7 +147,25 @@ const router = createRouter({
       component: () => import('../views/DriveProfile.vue'),
       meta: { requiresAuth: true, role: 'admin' }
     },
-    
+    {
+      path: '/company/dashboard',
+      name: 'CompanyDashboard',
+      component: () => import('../views/CompanyDashboard.vue'),
+      meta: { requiresAuth: true, role: 'company' }
+    },
+    {
+      path: '/company/past-drives',
+      name: 'PastDrives',
+      component: () => import('../views/PastDrives.vue'),
+      meta: { requiresAuth: true, role: 'company' }
+    },
+    {
+      path: '/company/selected',
+      name: 'SelectedCandidates',
+      component: () => import('../views/SelectedCandidates.vue'),
+      meta: { requiresAuth: true, role: 'company' }
+    },
+
 
   ],
 })

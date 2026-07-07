@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 from config import Config
 from common_api import HandleLogin , HandleRegister , HandleUinqueEmail,HandleUinqueUserName 
 from api.admin_api import GetallUsers,GetallUnactiveUSers,ApproveUnapproveUser,BlockUnblockUser,GetUserDetails,GetCompanyFullDetails,GetStudentFullDetails,AdminDriveDetail,AdminManageDrives
+from api.company_api import CreateDrive,GetApplicantList,GetUserApplications,UpdateApplicationStatus,CompanyDashboard
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -50,6 +51,16 @@ api.add_resource(GetCompanyFullDetails, '/admin/company/<int:user_id>')
 api.add_resource(GetStudentFullDetails, '/admin/student/<int:user_id>')
 api.add_resource(AdminManageDrives, '/admin/drives')
 api.add_resource(AdminDriveDetail, '/admin/drive/<int:drive_id>')
+
+#===========company_related_api's ================
+api.add_resource(CompanyDashboard, '/company/dashboard')
+api.add_resource(CreateDrive, '/company/drive/create')
+api.add_resource(GetApplicantList, '/company/drive/<int:drive_id>/applicants')
+api.add_resource(GetUserApplications, '/company/student/<int:applicant_id>/applications')
+api.add_resource(UpdateApplicationStatus, '/company/application/<int:application_id>/status')
+
+
+
 
 @app.route('/')
 def home():
