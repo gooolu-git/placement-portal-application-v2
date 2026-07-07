@@ -126,3 +126,29 @@ class UpdateApplicationStatus(Resource):
         except Exception as e:
             db.session.rollback()
             return {"status": "error", "message": f"An Error occurred: {str(e)}"}, 500
+
+
+class GetSelectedCandidates(Resource):
+    @company_required
+    def get(self):
+        try:
+            claims = get_jwt()
+            user_id = claims.get("sub")
+            user = db.session.get(User, user_id)
+            
+            if not user or not user.company_profile:
+                return {"status": "error", "message": "Company profile not found"}, 404
+            
+            # Query applications where status is 'Selected' AND the drive belongs to this company
+            selected_apps = Application.query.join(PlacementDrive).filter(
+                Application.status == 'Selected',
+                PlacementDrive.company_id == user.company_profile.id
+            ).all()
+            
+            return {
+                "status": "success",
+                "count": len(selected_apps),
+                "data": [app.to_dict() for app in selected_apps]
+            }, 200
+        except Exception as e:
+            return {"status": "error", "message": f"An Error occurred: {str(e)}"}, 500

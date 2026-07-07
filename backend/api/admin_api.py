@@ -235,3 +235,33 @@ class AdminDriveDetail(Resource):
         
         db.session.commit()
         return {"status": "success", "message": "Drive updated"}, 200
+
+class ApproveDrive(Resource):
+    @admin_required
+    def patch(self, drive_id):
+        """
+        Approves a pending placement drive.
+        """
+        try:
+            drive = PlacementDrive.query.get(drive_id)
+            if not drive:
+                return {"status": "error", "message": "Placement drive not found"}, 404
+            
+            # Ensure we are only approving drives that are currently pending
+            if drive.status != "pending":
+                return {
+                    "status": "error", 
+                    "message": f"Drive is currently '{drive.status}', cannot approve."
+                }, 400
+
+            drive.status = "Approved"
+            db.session.commit()
+            
+            return {
+                "status": "success",
+                "message": f"Drive '{drive.job_title}' has been approved successfully.",
+                "data": drive.to_dict()
+            }, 200
+        except Exception as e:
+            db.session.rollback()
+            return {"status": "error", "message": str(e)}, 500

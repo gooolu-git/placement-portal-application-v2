@@ -160,10 +160,33 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'company' }
     },
     {
-      path: '/company/selected',
+      path: '/company/drive/:drive_id/applicants',
+      name: 'CompanyManageDrive',
+      component: () => import('../views/ManageDrive.vue')
+    },
+    {
+      path: '/company/selected-candidates',
       name: 'SelectedCandidates',
       component: () => import('../views/SelectedCandidates.vue'),
       meta: { requiresAuth: true, role: 'company' }
+    },
+    {
+      path: '/student/dashboard',
+      name: 'StudentDashboard',
+      component: () => import('../views/StudentDashboard.vue'),
+      meta: { requiresAuth: true, role: 'student' }
+    },
+    {
+      path: '/student/applications',
+      name: 'ApplicationTracking',
+      component: () => import('../views/ApplicationTracking.vue'),
+      meta: { requiresAuth: true, role: 'student' }
+    },
+    {
+      path: '/student/history',
+      name: 'ApplicationHistory',
+      component: () => import('../views/ApplicationHistory.vue'),
+      meta: { requiresAuth: true, role: 'student' }
     },
 
 

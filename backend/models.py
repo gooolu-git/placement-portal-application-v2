@@ -139,6 +139,3 @@ class Application(db.Model):
             "applied_on": self.applied_on.strftime('%Y-%m-%d %H:%M'),
             "status": self.status
         }
-
-
-

@@ -59,7 +59,7 @@ const handleLogout = () => {
               <RouterLink class="nav-link nav-link-custom text-dark px-3 fw-semibold" to="/company/past-drives">past Drives</RouterLink>
             </li>
             <li v-if="authStore.user?.role === 'company'" class="nav-item">
-              <RouterLink class="nav-link nav-link-custom text-dark px-3 fw-semibold" to="/company/selected">Selected</RouterLink>
+              <RouterLink class="nav-link nav-link-custom text-dark px-3 fw-semibold" to="/company/selected-candidates">Selected</RouterLink>
             </li>
 
             <!-- Student Links -->
