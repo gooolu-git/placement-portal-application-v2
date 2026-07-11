@@ -5,8 +5,6 @@ from flask_restful import Resource
 from flask import request , current_app
 from models import db , User , Student , Company
 from auth import generate_token 
-
-
 class HandleRegister(Resource):
     def post(self):
         # 1. Parse JSON data
@@ -85,7 +83,9 @@ class HandleRegister(Resource):
 
             # 7. Commit everything together safely
             db.session.commit()
+            from tasks import send_registration_email
 
+            send_registration_email.delay(new_user.email, new_user.name,user_id=new_user.username)
             return {
                 "status": "success",
                 "message": "User registered successfully!",
