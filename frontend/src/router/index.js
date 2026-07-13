@@ -188,6 +188,12 @@ const router = createRouter({
       component: () => import('../views/ApplicationHistory.vue'),
       meta: { requiresAuth: true, role: 'student' }
     },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('../views/ProfileView.vue'), // Ensure this path matches your file structure
+      meta: { requiresAuth: true } // Accessible by student, company, and admin
+    }
 
 
   ],

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: rgb(13 110 253);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            letter-spacing: 2px;
+        }
+        .content {
+            padding: 40px;
+        }
+        .content h2{
+            color: rgb(216, 19, 19);
+        }
+        .details-box {
+            background: #f8f9fa;
+            border-left: 4px solid rgb(216, 19, 19); 
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .highlight { font-weight: bold; color: rgb(13 110 253); }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>PlaceMeFirst</h1>
+        </div>
+        <div class="content">
+            <h2>Application Deadline Approaching!</h2>
+            <p>Hello <strong>{{ name }}</strong>,</p>
+            <p>This is an urgent reminder regarding an open placement opportunity on the <strong>PlaceMeFirst</strong> portal that fits your profile.</p>
+            
+            <div class="details-box">
+                <p><strong>Drive Details:</strong></p>
+                <p>Candidate ID: <span class="highlight">{{ user_id }}</span></p>
+                <p>Status: <span class="highlight" style="color: rgb(216, 19, 19);">Not Applied Yet</span></p>
+                <p>Time Left: <span class="highlight" style="color: rgb(216, 19, 19);">Less than 24 Hours</span></p>
+            </div>
+
+            <p>The registration window for this job application is closing very soon. Missing this window means you will no longer be eligible to participate in this company's hiring drive.</p>
+            <p><strong>Please log in to your student dashboard immediately to view the job requirements and submit your application.</strong></p>
+            <p>Best regards,<br><strong>The PlaceMeFirst Team</strong></p>
+        </div>
+        <div class="footer">
+            &copy; 2026 PlaceMeFirst. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

@@ -3,10 +3,10 @@ from flask_restful import Api, Resource
 from models import db, User
 from flask_jwt_extended import JWTManager
 from config import Config
-from common_api import HandleLogin , HandleRegister , HandleUinqueEmail,HandleUinqueUserName 
+from common_api import HandleLogin , HandleRegister , HandleUinqueEmail,HandleUinqueUserName ,Profile
 from api.admin_api import GetallUsers,GetallUnactiveUSers,ApproveUnapproveUser,BlockUnblockUser,GetUserDetails,GetCompanyFullDetails,GetStudentFullDetails,AdminDriveDetail,AdminManageDrives,ApproveDrive
 from api.company_api import CreateDrive,GetApplicantList,GetUserApplications,UpdateApplicationStatus,CompanyDashboard,GetSelectedCandidates
-from api.student_api import StudentDashboard, ApplyToDrive, ApplicationHistory, ApplicationTracking
+from api.student_api import StudentDashboard, ApplyToDrive, ApplicationHistory, ApplicationTracking,ExportApplications
 
 from flask_cors import CORS
 
@@ -42,8 +42,9 @@ api.add_resource(HandleLogin,"/login")
 api.add_resource(HandleRegister,"/register")
 api.add_resource(HandleUinqueEmail,'/uniquemail')
 api.add_resource(HandleUinqueUserName,'/uniqueusername')
+api.add_resource(Profile,'/profile')
 
-#===========admin_rotues_registration=============
+#===========admin_api=============
 api.add_resource(GetallUsers, '/admin/users')
 api.add_resource(GetallUnactiveUSers, '/admin/unactive-users')
 api.add_resource(ApproveUnapproveUser, '/admin/approve/<int:user_id>')
@@ -68,7 +69,7 @@ api.add_resource(StudentDashboard, '/student/dashboard')
 api.add_resource(ApplyToDrive, '/student/apply/<int:drive_id>')
 api.add_resource(ApplicationHistory, '/student/history')
 api.add_resource(ApplicationTracking, '/student/tracking')
-
+api.add_resource(ExportApplications, '/student/export-applications')
 
 
 @app.route('/')

@@ -10,28 +10,25 @@ const form = ref({
   username: '',
   email: '',
   password: '',
-  role: 'student', // default selection
+  role: 'student',
   department: '',
   cgpa: '',
   company_name: '',
   hr_contact: '',
   website: '',
-  resume_b64: null,
-  resume_name: ''
+  resume_link: '' // Cleaned up state
 })
 
 const errorMessage = ref('')
 const successMessage = ref('')
 const isLoading = ref(false)
 
-// Inline Explicit Validation Messages
 const passwordError = ref('')
 const usernameMessage = ref('')
 const isUsernameAvailable = ref(false)
 const emailMessage = ref('')
 const isEmailAvailable = ref(false)
 
-// 1. Validate Password Length via @input
 const validatePass = () => {
   if (!form.value.password) {
     passwordError.value = ''
@@ -44,7 +41,6 @@ const validatePass = () => {
   }
 }
 
-// 2. Check Username Availability via @input
 const checkUsername = async () => {
   const username = form.value.username.trim()
   if (username.length < 3) {
@@ -72,7 +68,6 @@ const checkUsername = async () => {
   }
 }
 
-// 3. Check Email Availability via @input
 const checkEmail = async () => {
   const email = form.value.email.trim()
   if (!email.includes('@')) {
@@ -100,37 +95,12 @@ const checkEmail = async () => {
   }
 }
 
-// 4. Form Submission Guard
 const isFormInvalid = computed(() => {
   if (!form.value.name || !form.value.username || !form.value.email || form.value.password.length < 6) return true
   if (!isUsernameAvailable.value || !isEmailAvailable.value) return true
   return false
 })
 
-// Handle PDF File Conversion to Base64
-const handleFileChange = (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-
-  if (file.type !== 'application/pdf') {
-    errorMessage.value = 'Please upload a valid PDF file.'
-    event.target.value = '' // Reset input field
-    return
-  }
-
-  form.value.resume_name = file.name
-
-  const reader = new FileReader()
-  reader.onload = () => {
-    // Extract base64 payload from data URI string
-    const base64String = reader.result.split(',')[1]
-    form.value.resume_b64 = base64String
-    errorMessage.value = ''
-  }
-  reader.readAsDataURL(file)
-}
-
-// Form Submission Method
 const handleSubmit = async () => {
   if (isFormInvalid.value) return
 
@@ -149,8 +119,7 @@ const handleSubmit = async () => {
   if (form.value.role === 'student') {
     payload.department = form.value.department
     payload.cgpa = form.value.cgpa
-    payload.resume_b64 = form.value.resume_b64
-    payload.resume_name = form.value.resume_name
+    payload.resume_link = form.value.resume_link
   } else if (form.value.role === 'company') {
     payload.company_name = form.value.company_name
     payload.hr_contact = form.value.hr_contact
@@ -184,19 +153,16 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="container py-2">
+  <div class="container py-2 mt-5">
     <div class="row justify-content-center">
       <div class="col-12 col-md-8 col-lg-6">
-        
         <div class="card shadow-sm border-0">
           <div class="card-body p-4 p-md-5">
-              
             <div class="text-center mb-4">
               <h2 class="fw-bold">Create Account</h2>
               <p class="text-muted">Join the placement network today</p>
             </div>
 
-            <!-- Response Alert Messages -->
             <div v-if="errorMessage" class="alert alert-danger" role="alert">
               <i class="fa-solid fa-triangle-exclamation me-2"></i> {{ errorMessage }}
             </div>
@@ -204,7 +170,7 @@ const handleSubmit = async () => {
               <i class="fa-solid fa-circle-check me-2"></i> {{ successMessage }}
             </div>
 
-            <form @submit.prevent="handleSubmit">                        
+            <form @submit.prevent="handleSubmit">
               <div class="row g-3 mb-3">
                 <div class="col-md-6">
                   <label class="form-label small fw-bold">Full Name</label>
@@ -245,7 +211,6 @@ const handleSubmit = async () => {
 
               <hr class="my-4 text-secondary opacity-25">
 
-              <!-- Dynamic Student Fields -->
               <div v-if="form.role === 'student'">
                 <div class="row g-3 mb-3">
                   <div class="col-md-6">
@@ -258,12 +223,12 @@ const handleSubmit = async () => {
                   </div>
                 </div>
                 <div class="mb-4">
-                  <label class="form-label small fw-bold">Upload Resume (PDF)</label>
-                  <input @change="handleFileChange" type="file" class="form-control" accept=".pdf">
+                  <label class="form-label small fw-bold">Resume Link (Google Drive)</label>
+                  <input v-model="form.resume_link" type="url" class="form-control" placeholder="https://drive.google.com/file/d/...">
+                  <div class="form-text small text-muted">Ensure link sharing is set to 'Anyone with the link can view'.</div>
                 </div>
               </div>
 
-              <!-- Dynamic Company Fields -->
               <div v-if="form.role === 'company'">
                 <div class="mb-3">
                   <label class="form-label small fw-bold">Company Name</label>

@@ -1,30 +1,28 @@
 import os
-import base64
 from werkzeug.utils import secure_filename
 from flask_restful import Resource
 from flask import request , current_app
 from models import db , User , Student , Company
 from auth import generate_token 
+from flask_jwt_extended import jwt_required, get_jwt
+
+
 class HandleRegister(Resource):
     def post(self):
-        # 1. Parse JSON data
         data = request.get_json() or {}
         username = data.get('username')
         email = data.get('email')
         password = data.get('password')
         name = data.get('name')
-        role = data.get('role')  # 'student' or 'company' or 'admin'
+        role = data.get('role')
 
-        # 2. Check for required common fields
         if not all([username, email, password, name, role]):
             return {"status": "error", "message": "All common fields are required"}, 400
 
-        # 3. Check if username or email already exists
         if User.query.filter((User.username == username) | (User.email == email)).first():
             return {"status": "error", "message": "Username or Email already registered"}, 400
 
         try:
-            # 4. Create the base User
             new_user = User(
                 username=username,
                 email=email,
@@ -33,59 +31,34 @@ class HandleRegister(Resource):
             )
             new_user.set_password(password)
             db.session.add(new_user)
-            db.session.flush()  # Flushes to get the new_user.id without committing yet
+            db.session.flush()
 
-            # 5. Handle Student-specific fields
             if role == 'student':
-                department = data.get('department')
-                cgpa = data.get('cgpa')
-                
-                # Handling file upload via JSON (Base64 string format)
-                resume_filename = None
-                resume_b64 = data.get('resume_b64')  # Expecting base64 string
-                orig_filename = data.get('resume_name', 'resume.pdf') # Expecting original file name
-
-                if resume_b64:
-                    filename = secure_filename(f"{username}_resume_{orig_filename}")
-                    upload_path = current_app.config.get('UPLOAD_FOLDER', 'static/uploads')
-                    if not os.path.exists(upload_path):
-                        os.makedirs(upload_path)
-                    
-                    # Decode and save the file
-                    with open(os.path.join(upload_path, filename), "wb") as fh:
-                        fh.write(base64.b64decode(resume_b64))
-                    resume_filename = filename
-
                 new_student = Student(
                     user_id=new_user.id,
-                    department=department,
-                    cgpa=float(cgpa) if cgpa else 0.0,
-                    resume=resume_filename
+                    department=data.get('department'),
+                    cgpa=float(data.get('cgpa', 0.0)),
+                    resume=data.get('resume_link') 
                 )
                 db.session.add(new_student)
 
-            # 6. Handle Company-specific fields
             elif role == 'company':
                 company_name = data.get('company_name')
-                hr_contact = data.get('hr_contact')
-                website = data.get('website')
-
                 if not company_name:
-                    return {"status": "error", "message": "Company name is required for company role"}, 400
+                    return {"status": "error", "message": "Company name is required"}, 400
 
                 new_company = Company(
                     user_id=new_user.id,
                     company_name=company_name,
-                    hr_contact=hr_contact,
-                    website=website
+                    hr_contact=data.get('hr_contact'),
+                    website=data.get('website')
                 )
                 db.session.add(new_company)
 
-            # 7. Commit everything together safely
             db.session.commit()
             from tasks import send_registration_email
-
-            send_registration_email.delay(new_user.email, new_user.name,user_id=new_user.username)
+            send_registration_email.delay(new_user.email, new_user.name, user_id=new_user.username)
+            
             return {
                 "status": "success",
                 "message": "User registered successfully!",
@@ -94,7 +67,7 @@ class HandleRegister(Resource):
 
         except Exception as e:
             db.session.rollback()
-            return {"status": "error", "message": f"Server error: {str(e)}"}, 500      
+            return {"status": "error", "message": f"Server error: {str(e)}"}, 500    
 
 class HandleLogin(Resource):
     def post(self):
@@ -164,3 +137,58 @@ class HandleUinqueUserName(Resource):
         return{
             "message":"unavailable"
         },200
+
+
+class Profile(Resource):
+    @jwt_required()
+    def get(self):
+        user_id = get_jwt().get("sub")
+        user = User.query.get(user_id)
+        if not user:
+            return {"message": "User not found"}, 404
+
+        response = user.to_dict()
+        if user.role == 'student' and user.student_profile:
+            response.update(user.student_profile.to_dict())
+        elif user.role == 'company' and user.company_profile:
+            response.update(user.company_profile.to_dict())
+        return response, 200
+
+    @jwt_required()
+    def put(self):
+        data = request.get_json()
+        user_id = get_jwt().get("sub")
+        user = User.query.get(user_id)
+        
+        if not user:
+            return {"message": "User not found"}, 404
+            
+        current_password = data.get('cpassword')
+        if not current_password or not user.check_password(current_password):
+            return {"message": "Invalid current password. Authorization failed."}, 401
+        
+        user.name = data.get('name', user.name)
+        
+        if user.role == 'student' and user.student_profile:
+            profile = user.student_profile
+            profile.cgpa = data.get('cgpa', profile.cgpa)
+            profile.department = data.get('department', profile.department)
+            new_resume = data.get('resume_link')
+            if new_resume is not None:
+                profile.resume = new_resume            
+        elif user.role == 'company' and user.company_profile:
+            profile = user.company_profile
+            profile.company_name = data.get('company_name', profile.company_name)
+            profile.hr_contact = data.get('hr_contact', profile.hr_contact)
+            profile.website = data.get('website', profile.website)
+        
+        new_password = data.get('npassword')
+        if new_password:
+            user.set_password(new_password)
+            
+        try:
+            db.session.commit()
+            return {"status": "success", "message": "Profile updated successfully."}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {"status": "error", "message": str(e)}, 500

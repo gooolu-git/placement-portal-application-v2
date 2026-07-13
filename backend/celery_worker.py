@@ -5,7 +5,7 @@ from app import app
 
 #ye celery ka config hai isme pahle ham eek name diye hai celry ke liye - name_for_celery aur phir broker aur eek backend ka name aur last me bta rhe hai ki tasks name ke file me tumko sare functions milenge jisme tumko kam krna hai 
 celery_app = Celery(
-    'task',
+    'tasks',
     broker='redis://localhost:6379/1',
     backend='redis://localhost:6379/2',
     include=['tasks']
@@ -21,15 +21,13 @@ celery_app.Task = FlaskTask
 
 celery_app.conf.timezone='Asia/Kolkata'
 
-# celery_app.conf.beat_schedule = {
-#     'monthly-report': {
-#         'task': 'tasks.send_monthly_report',
-#         'schedule': crontab(hour=9, minute=0, day_of_month=1),
-#         # Runs at 9:00 AM on the 1st of every month
-#     },
-#     'daily-reminder': {
-#         'task': 'tasks.send_daily_reminder',
-#         'schedule': crontab(hour=8, minute=0),
-#         # Runs every day at 8:00 AM
-#     },
-# } 
+celery_app.conf.beat_schedule = {
+    'monthly-report': {
+        'task': 'tasks.send_monthly_report',
+        'schedule': crontab(hour=8, minute=2, day_of_month=1),
+    },
+    'daily-reminder': {
+        'task': 'tasks.send_daily_remainder',
+        'schedule': crontab(hour=8, minute=5),
+    },
+}
