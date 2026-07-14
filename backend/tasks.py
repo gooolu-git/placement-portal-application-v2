@@ -160,50 +160,65 @@ def send_monthly_report():
     except Exception as e:
         return f"Failed sending report to admin email {admin.email}: {str(e)}"
 
-
 @celery_app.task
-def export_applications_to_csv(student_id, student_email, student_name):
+def ExportApplications(student_id, student_email, student_name):
+    apps = Application.query.filter_by(student_id=student_id).all()
+    
+    # 2. Write CSV to memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Student ID", "Company Name", "Drive Title", "Application Status", "Date Applied"])
+    
+    for app_entry in apps:
+        # Added safety checks in case relationships are None
+        company_name = app_entry.target_drive.company_owner.company_name if app_entry.target_drive and app_entry.target_drive.company_owner else "N/A"
+        drive_title = app_entry.target_drive.job_title if app_entry.target_drive else "N/A"
+        date_applied = app_entry.applied_on.strftime('%Y-%m-%d') if app_entry.applied_on else "N/A"
+
+        writer.writerow([
+            app_entry.student_id,
+            company_name,
+            drive_title,
+            app_entry.status,
+            date_applied
+        ])
+        
+    csv_data = output.getvalue()
+    
+    # 3. Prepare Email
+    msg = MIMEMultipart()
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = student_email
+    msg['Subject'] = "Your Placement Application History - PlaceMeFirst"
+    
+    # Professional HTML Body
+    email_body = f"""
+    <html>
+        <body>
+            <h2 style="color: #2c3e50;">PlaceMeFirst</h2>
+            <p>Hello <b>{student_name}</b>,</p>
+            <p>As requested, please find your complete placement application history attached to this email as a CSV file.</p>
+            <p>We hope this summary helps you keep track of your career progress.</p>
+            <br>
+            <p>Best regards,<br>
+            <b>The PlaceMeFirst Team</b></p>
+            <hr style="border: 0; border-top: 1px solid #eee;">
+            <p style="font-size: 12px; color: #7f8c8d;">This is an automated report. Please do not reply to this email.</p>
+        </body>
+    </html>
     """
-    Generates a CSV of all applications for a student and emails it.
-    """
-    with app.app_context():
-        # 1. Fetch data
-        apps = Application.query.filter_by(student_id=student_id).all()
-        
-        # 2. Write CSV to memory
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(["Student ID", "Company Name", "Drive Title", "Application Status", "Date Applied"])
-        
-        for app_entry in apps:
-            writer.writerow([
-                app_entry.student_id,
-                app_entry.target_drive.company_owner.company_name,
-                app_entry.target_drive.job_title,
-                app_entry.status,
-                app_entry.applied_on.strftime('%Y-%m-%d')
-            ])
-            
-        csv_data = output.getvalue()
-        
-        # 3. Prepare Email
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = student_email
-        msg['Subject'] = "Your Placement Application History"
-        
-        msg.attach(MIMEText(f"Hello {student_name}, please find your application history attached.", 'plain'))
-        
-        # 4. Attach CSV
-        part = MIMEApplication(csv_data.encode('utf-8'), Name="application_history.csv")
-        part['Content-Disposition'] = 'attachment; filename="application_history.csv"'
-        msg.attach(part)
-        
-        # 5. Send
-        try:
-            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-            server.send_message(msg)
-            server.quit()
-            return f"Export sent to {student_email}"
-        except Exception as e:
-            return f"Error sending export email: {str(e)}"
+    msg.attach(MIMEText(email_body, 'html'))
+    
+    # 4. Attach CSV
+    part = MIMEApplication(csv_data.encode('utf-8'), Name="application_history.csv")
+    part['Content-Disposition'] = 'attachment; filename="application_history.csv"'
+    msg.attach(part)
+    
+    # 5. Send
+    try:
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        server.send_message(msg)
+        server.quit()
+        return f"Export sent to {student_email}"
+    except Exception as e:
+        return f"Error sending export email: {str(e)}"

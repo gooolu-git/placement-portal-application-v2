@@ -68,11 +68,12 @@ class ApplicationHistory(Resource):
     @student_required
     def get(self):
         student_id = get_student_id_from_user()
-        if not student_id: return {"status": "error", "message": "Profile not found"}, 404
+        if not student_id: 
+            return {"status": "error", "message": "Profile not found"}, 404
         
         history = Application.query.join(PlacementDrive).filter(
             Application.student_id == student_id,
-            PlacementDrive.deadline < datetime.now()
+            PlacementDrive.status == 'Approved' 
         ).all()
         
         return {"data": [app.to_dict() for app in history]}, 200
@@ -88,18 +89,23 @@ class ApplicationTracking(Resource):
         return {"data": [app.to_dict() for app in applications]}, 200
 
 
+
 class ExportApplications(Resource):
+
     @student_required 
     def post(self):
         student_id = get_student_id_from_user() 
         if not student_id:
             return {"status": "error", "message": "Student profile not found"}, 404
-        from tasks import export_applications_to_csv
         student_record = Student.query.get(student_id)
-        export_applications_to_csv.delay(
+        from tasks import ExportApplications
+        ExportApplications.delay(
                     student_id=student_id,
                     student_email=student_record.user.email,
                     student_name=student_record.user.name
                 )
         
         return {"status": "success", "message": "Your report is being generated and will be emailed to you shortly."}, 202
+
+
+

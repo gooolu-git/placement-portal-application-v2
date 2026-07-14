@@ -1,8 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import bcrypt
+from extension import  db
 
-db = SQLAlchemy()
 class User(db.Model):
     __tablename__ = 'user'
     
@@ -127,15 +127,18 @@ class Application(db.Model):
     drive_id = db.Column(db.Integer, db.ForeignKey('placement_drive.id'), nullable=False) # Fixed ForeignKey syntax
     applied_on = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(50), default='Applied') # Fixed syntax and quotes
-
     def to_dict(self):
         return {
             "id": self.id,
             "student_id": self.student_id,
             "student_name": self.student_applicant.user.name if self.student_applicant and self.student_applicant.user else "Unknown",
+            "department": self.student_applicant.department if self.student_applicant else "N/A",
+            "cgpa": self.student_applicant.cgpa if self.student_applicant else 0.0,
+            "resume": self.student_applicant.resume if self.student_applicant else None,
             "drive_id": self.drive_id,
             "job_title": self.target_drive.job_title if self.target_drive else "Unknown",
             "company_name": self.target_drive.company_owner.company_name if self.target_drive and self.target_drive.company_owner else "Unknown",
+            "company_website": self.target_drive.company_owner.website if self.target_drive and self.target_drive.company_owner else "#",
             "applied_on": self.applied_on.strftime('%Y-%m-%d %H:%M'),
             "status": self.status
         }

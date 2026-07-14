@@ -1,7 +1,7 @@
 from celery import Celery , Task
 from celery.schedules import crontab
-from app import app
-
+from extension import create_app
+app=create_app()
 
 #ye celery ka config hai isme pahle ham eek name diye hai celry ke liye - name_for_celery aur phir broker aur eek backend ka name aur last me bta rhe hai ki tasks name ke file me tumko sare functions milenge jisme tumko kam krna hai 
 celery_app = Celery(

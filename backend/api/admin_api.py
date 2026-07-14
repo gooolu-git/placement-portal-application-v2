@@ -1,7 +1,9 @@
-from flask import request
+from flask import request,jsonify
 from flask_restful import Resource
 from auth import admin_required
-from models import User, db,PlacementDrive
+from models import User, db,PlacementDrive , Application
+from datetime import datetime
+from sqlalchemy import func
 
 class GetallUsers(Resource):
     @admin_required
@@ -208,58 +210,108 @@ class AdminManageDrives(Resource):
         if search:
             query = query.filter(PlacementDrive.job_title.ilike(f'%{search}%'))
         drives = query.all()
-        return {"status": "success", "data": [d.to_dict() for d in drives]}, 200
+        applications = Application.query.count()
+        return {"status": "success", "data": [d.to_dict() for d in drives],"applicationcount":applications}, 200
 
 class AdminDriveDetail(Resource):
     @admin_required
     def get(self, drive_id):
-        """Fetch full details + applicants for the DriveProfile page"""
         drive = PlacementDrive.query.get(drive_id)
         if not drive: return {"status": "error", "message": "Not found"}, 404
-        
-        d_dict = drive.to_dict()
-        # Include list of applications with applicant details
-        d_dict['applications'] = [app.to_dict() for app in drive.applications]
-        return {"status": "success", "data": d_dict}, 200
+        company = drive.company_owner
+        company_details = {}
+        if company:
+            company_details = {
+                "id": company.id,
+                "company_name": company.company_name,
+                "website": company.website,
+                "hr_contact": company.hr_contact,
+                "hr_name": company.user.name if company.user else "Unknown",
+                "is_approved": company.user.is_approved if company.user else False
+            }
+        applicants_list = []
+        for app in drive.applications:
+            student = app.student_applicant
+            if student:
+                applicants_list.append({
+                    "application_id": app.id,
+                    "applied_on": app.applied_on.strftime('%Y-%m-%d %H:%M'),
+                    "status": app.status,
+                    "student_details": {
+                        "student_id": student.id,
+                        "cgpa": student.cgpa,
+                        "department": student.department,
+                        "resume": student.resume,
+                        "name": student.user.name if student.user else "Unknown",
+                        "email": student.user.email if student.user else "Unknown",
+                        "is_blacklisted": student.user.is_blacklisted if student.user else False
+                    }
+                })
+
+        response_data = {
+            "drive_details": {
+                "id": drive.id,
+                "job_title": drive.job_title,
+                "job_description": drive.job_description,
+                "eligiblity_criteria": drive.eligiblity_criteria,
+                "deadline": drive.deadline.strftime('%Y-%m-%d %H:%M:%S'),
+                "status": drive.status
+            },
+            "company_details": company_details,
+            "applicants": applicants_list,
+            "total_applicants": len(applicants_list)
+        }
+        return {"status":"success", "data": response_data}, 200
 
     @admin_required
     def patch(self, drive_id):
-        """Update drive status, title, or description"""
         drive = PlacementDrive.query.get(drive_id)
         if not drive: return {"status": "error", "message": "Not found"}, 404
         
         data = request.get_json()
+        
         if 'status' in data: drive.status = data['status']
         if 'job_title' in data: drive.job_title = data['job_title']
-        if 'deadline' in data: drive.deadline = datetime.strptime(data['deadline'], '%Y-%m-%dT%H:%M')
+        if 'job_description' in data: drive.job_description = data['job_description']
+        if 'eligiblity_criteria' in data: drive.eligiblity_criteria = data['eligiblity_criteria']
+        
+        if 'deadline' in data:
+            try:
+                drive.deadline = datetime.strptime(data['deadline'], '%Y-%m-%dT%H:%M')
+            except ValueError:
+                try:
+                    drive.deadline = datetime.strptime(data['deadline'], '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    return {"status": "error", "message": "Invalid date format"}, 400
         
         db.session.commit()
-        return {"status": "success", "message": "Drive updated"}, 200
-
+        return {"status": "success", "message": "Drive updated", "data": drive.to_dict()}, 200
+    
+    
 class ApproveDrive(Resource):
     @admin_required
     def patch(self, drive_id):
-        """
-        Approves a pending placement drive.
-        """
         try:
             drive = PlacementDrive.query.get(drive_id)
             if not drive:
                 return {"status": "error", "message": "Placement drive not found"}, 404
             
-            # Ensure we are only approving drives that are currently pending
-            if drive.status != "pending":
+            if drive.status == "pending":
+                new_status = "Approved"
+            elif drive.status == "Approved":
+                new_status = "pending"
+            else:
                 return {
                     "status": "error", 
-                    "message": f"Drive is currently '{drive.status}', cannot approve."
+                    "message": f"Drive status is '{drive.status}'. Only 'pending' or 'Approved' drives can be toggled."
                 }, 400
 
-            drive.status = "Approved"
+            drive.status = new_status
             db.session.commit()
             
             return {
                 "status": "success",
-                "message": f"Drive '{drive.job_title}' has been approved successfully.",
+                "message": f"Drive '{drive.job_title}' status updated to '{new_status}' successfully.",
                 "data": drive.to_dict()
             }, 200
         except Exception as e:
