@@ -1,11 +1,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { toast } from '@/utils/toast'
 
 const route = useRoute()
-const router = useRouter()
 const authStore = useAuthStore()
 
 const company = ref(null)
@@ -28,7 +27,6 @@ const fetchDetails = async () => {
   }
 }
 
-// Stats Calculation for Engagement Card
 const totalSelections = computed(() => {
   if (!company.value?.drives) return 0
   return company.value.drives.reduce((acc, d) => {
@@ -36,15 +34,34 @@ const totalSelections = computed(() => {
   }, 0)
 })
 
-const updateProfile = async () => {
-  // Add your API call here for POST /admin/update_profile/<id>
-  toast.success('Success', 'Profile updated.')
-}
-
 const toggleBlacklist = async () => {
-  // Add your API call here for POST /admin/blacklist_company/<id>
-  toast.success('Status', 'Partner status updated.')
-  fetchDetails()
+  if (!company.value) return
+  
+  try {
+    // API logic: PATCH /admin/block/<user_id>
+    // Toggle current blacklist status
+    const newStatus = !company.value.is_blacklisted
+    
+    const res = await fetch(`http://localhost:5000/admin/block/${company.value.id}`, {
+      method: 'PATCH',
+      headers: { 
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({ is_blocked: newStatus })
+    })
+    
+    const data = await res.json()
+    
+    if (res.ok) {
+      toast.success('Success', data.action)
+      await fetchDetails() // Refresh data
+    } else {
+      toast.error('Error', data.message || 'Failed to update status')
+    }
+  } catch (err) {
+    toast.error('Error', 'An unexpected error occurred')
+  }
 }
 
 onMounted(fetchDetails)
@@ -52,7 +69,7 @@ onMounted(fetchDetails)
 
 <template>
   <div v-if="isLoading" class="text-center py-5">Loading...</div>
-  <div v-else-if="company" class="container py-4 mt-2 bg-light mt-5">
+  <div v-else-if="company" class="container py-4 mt-5 bg-light">
     <div class="row g-4">
       <!-- Left Column -->
       <div class="col-lg-8">
@@ -64,7 +81,7 @@ onMounted(fetchDetails)
           </div>
           <div class="row align-items-center">
             <div class="col-md-3 text-center">
-              <img :src="`https://api.dicebear.com/7.x/identicon/svg?seed=${company.company_profile?.company_name}`" class="rounded-circle border border-3 p-1 bg-white shadow-sm" width="110">
+              <img :src="`https://api.dicebear.com/7.x/identicon/svg?seed=${company.company_profile?.company_name || 'company'}`" class="rounded-circle border border-3 p-1 bg-white shadow-sm" width="110">
             </div>
             <div class="col-md-9">
               <h4 class="fw-bold text-dark mb-1">{{ company.company_profile?.company_name || company.name }}</h4>
@@ -106,9 +123,7 @@ onMounted(fetchDetails)
               </thead>
               <tbody>
                 <tr v-for="drive in company.drives" :key="drive.id" class="border-bottom">
-                  <td class="py-3 px-3">
-                    <div class="fw-bold text-dark">{{ drive.job_title }}</div>
-                  </td>
+                  <td class="py-3 px-3"><div class="fw-bold text-dark">{{ drive.job_title }}</div></td>
                   <td>{{ drive.deadline }}</td>
                   <td><span class="badge bg-primary-subtle text-primary">{{ drive.status }}</span></td>
                   <td class="text-center">{{ drive.applications?.length || 0 }}</td>
@@ -124,7 +139,6 @@ onMounted(fetchDetails)
 
       <!-- Right Column -->
       <div class="col-lg-4">
-        <!-- Stats Card -->
         <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white text-center">
           <h6 class="fw-bold text-dark mb-4 text-uppercase" style="font-size: 0.75rem;">Engagement Stats</h6>
           <div class="row g-3">
@@ -146,21 +160,6 @@ onMounted(fetchDetails)
         <!-- Admin Controls -->
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
           <h6 class="fw-bold text-dark mb-4 text-uppercase"><i class="fas fa-user-shield me-2 text-primary"></i>Admin Controls</h6>
-          <form @submit.prevent="updateProfile">
-            <div class="mb-3">
-              <label class="small fw-bold text-secondary">Company Legal Name</label>
-              <input v-model="company.company_profile.company_name" class="form-control bg-light border-0 py-2">
-            </div>
-            <div class="mb-3">
-              <label class="small fw-bold text-secondary">HR Contact Person</label>
-              <input v-model="company.company_profile.hr_contact" class="form-control bg-light border-0 py-2">
-            </div>
-            <div class="mb-3">
-              <label class="small fw-bold text-danger">Reset Password</label>
-              <input type="password" class="form-control bg-light border-0 py-2" placeholder="Keep blank to skip">
-            </div>
-            <button class="btn btn-primary w-100 rounded-pill fw-bold">Update Records</button>
-          </form>
           <div class="mt-3 border-top pt-3">
             <button @click="toggleBlacklist" class="btn w-100 rounded-pill fw-bold" :class="company.is_blacklisted ? 'btn-outline-success' : 'btn-outline-danger'">
               {{ company.is_blacklisted ? 'Unblock Partner' : 'Block Partner' }}

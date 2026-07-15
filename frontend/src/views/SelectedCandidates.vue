@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 const selectedStudents = ref([]);
-const companyName = ref(''); // Simplified: just fetching name from auth or store
 
 const fetchSelected = async () => {
   try {
@@ -14,17 +13,9 @@ const fetchSelected = async () => {
     
     // API returns { status: 'success', data: [...] }
     selectedStudents.value = res.data.data;
-    
-    // Optional: Get company name from a different call or store if not in this response
-    // For now, we assume you might want to fetch it from the Dashboard API or 
-    // simply use a placeholder if the API doesn't return it.
   } catch (err) {
     console.error("Error fetching selected:", err);
   }
-};
-
-const formatDate = (dateStr) => {
-  return new Date(dateStr).toLocaleDateString('en-GB', { month: 'short', day: '2-digit', year: 'numeric' });
 };
 
 onMounted(fetchSelected);
@@ -60,6 +51,11 @@ onMounted(fetchSelected);
           </tr>
         </thead>
         <tbody>
+          <!-- Empty State -->
+          <tr v-if="selectedStudents.length === 0">
+            <td colspan="5" class="text-center py-4 text-muted">No selected candidates yet.</td>
+          </tr>
+
           <tr v-for="app in selectedStudents" :key="app.id" class="border-bottom">
             <td class="ps-4 py-3">
               <div class="d-flex align-items-center">
@@ -72,8 +68,8 @@ onMounted(fetchSelected);
               </div>
             </td>
             <td>
-              <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ app.drive_title }}</div>
-              <div class="text-muted small" style="font-size: 0.7rem;">Hired: {{ formatDate(app.applied_on) }}</div>
+              <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ app.job_title }}</div>
+              <div class="text-muted small" style="font-size: 0.7rem;">Applied: {{ app.applied_on }}</div>
             </td>
             <td>
               <div class="fw-bold text-dark small">{{ app.department }}</div>
@@ -82,11 +78,12 @@ onMounted(fetchSelected);
               </div>
             </td>
             <td>
-              <span class="badge bg-success-subtle text-success border rounded-pill small">SELECTED</span>
+              <span class="badge bg-success-subtle text-success border rounded-pill small">{{ app.status }}</span>
             </td>
             <td class="text-end pe-4">
-              <a v-if="app.resume" :href="`http://localhost:5000/static/uploads/${app.resume}`" 
+              <a v-if="app.resume" :href="`${app.resume}`" 
                  target="_blank" class="btn btn-outline-primary btn-sm rounded-pill px-3">View</a>
+              <span v-else class="text-muted small">N/A</span>
             </td>
           </tr>
         </tbody>

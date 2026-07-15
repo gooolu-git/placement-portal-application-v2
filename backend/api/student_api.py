@@ -5,7 +5,9 @@ from datetime import datetime
 from auth import student_required
 from models import db, PlacementDrive, Application, Student
 
-# Helper function to get student_id from user_id (sub)
+
+
+
 def get_student_id_from_user():
     claims = get_jwt()
     user_id = claims.get("sub")

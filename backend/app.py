@@ -5,7 +5,7 @@ from models import  User
 app = create_app()
 api = Api(app)
 
-# Import routes here (Late Import)
+
 from common_api import HandleLogin, HandleRegister, HandleUinqueEmail, HandleUinqueUserName, Profile
 from api.admin_api import (
     GetallUsers, GetallUnactiveUSers, ApproveUnapproveUser, BlockUnblockUser, 
@@ -20,7 +20,7 @@ from api.student_api import (
     StudentDashboard, ApplyToDrive, ApplicationHistory, ApplicationTracking, ExportApplications
 )
 
-# Admin Seeding Logic
+
 with app.app_context():
     db.create_all()
     admin = User.query.filter_by(is_admin=True).first()
@@ -33,14 +33,14 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
-# Resource Registration
+#===================common_apis=============================
 api.add_resource(HandleLogin, "/login")
 api.add_resource(HandleRegister, "/register")
 api.add_resource(HandleUinqueEmail, '/uniquemail')
 api.add_resource(HandleUinqueUserName, '/uniqueusername')
 api.add_resource(Profile, '/profile')
 
-# Admin API Registration
+#===========================admin-apis=============================
 api.add_resource(GetallUsers, '/admin/users')
 api.add_resource(GetallUnactiveUSers, '/admin/unactive-users')
 api.add_resource(ApproveUnapproveUser, '/admin/approve/<int:user_id>')
@@ -52,7 +52,7 @@ api.add_resource(AdminManageDrives, '/admin/drives')
 api.add_resource(AdminDriveDetail, '/admin/drive/<int:drive_id>')
 api.add_resource(ApproveDrive, '/admin/drive/approve/<int:drive_id>')
 
-# Company API Registration
+#===============================company-apis============================
 api.add_resource(CompanyDashboard, '/company/dashboard')
 api.add_resource(CreateDrive, '/company/drive/create')
 api.add_resource(GetApplicantList, '/company/drive/<int:drive_id>/applicants')
@@ -60,7 +60,7 @@ api.add_resource(GetUserApplications, '/company/student/<int:applicant_id>/appli
 api.add_resource(UpdateApplicationStatus, '/company/application/<int:application_id>/status')
 api.add_resource(GetSelectedCandidates, '/company/selected-candidates')
 
-# Student API Registration
+#==============================student-api==============================
 api.add_resource(StudentDashboard, '/student/dashboard')
 api.add_resource(ApplyToDrive, '/student/apply/<int:drive_id>')
 api.add_resource(ApplicationHistory, '/student/history')
@@ -72,4 +72,4 @@ def home():
     return "hello world"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0',debug=True)

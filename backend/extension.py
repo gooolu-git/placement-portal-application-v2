@@ -2,17 +2,17 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from cache import cache
+from flask_caching import Cache
 from config import Config
 
 db = SQLAlchemy()
 jwt = JWTManager()
+cache =Cache()
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
-    # Initialize extensions
     db.init_app(app)
     jwt.init_app(app)
     cache.init_app(app)

@@ -4,9 +4,16 @@ from auth import admin_required
 from models import User, db,PlacementDrive , Application
 from datetime import datetime
 from sqlalchemy import func
+from extension import cache
+
+
+def make_all_users_key():
+    return "all_users_list"
+
 
 class GetallUsers(Resource):
     @admin_required
+    @cache.cached(timeout=360, key_prefix=make_all_users_key)
     def get(self):
         try:
             users = User.query.filter_by(is_blacklisted=False, is_approved=True).all()
@@ -14,7 +21,6 @@ class GetallUsers(Resource):
             
             for user in users:
                 u_dict = user.to_dict()
-                # Attach profiles dynamically based on roles for the UI tables
                 if user.role == 'student' and user.student_profile:
                     u_dict['student_profile'] = user.student_profile.to_dict()
                 elif user.role == 'company' and user.company_profile:
@@ -68,6 +74,7 @@ class ApproveUnapproveUser(Resource):
             
             user.is_approved = new_status 
             db.session.commit()
+            cache.delete("all_users_list")
             action_taken_text = 'approved' if new_status else "unapproved"
             return {
                 "status": "success",
@@ -144,10 +151,10 @@ class GetCompanyFullDetails(Resource):
             
             u_dict = user.to_dict()
             if user.company_profile:
-                # Add profile details
+                #adding profile details
                 u_dict['company_profile'] = user.company_profile.to_dict()
                 
-                # Add drives with their applications
+                #adding drives with their applications
                 drives_data = []
                 for drive in user.company_profile.drives:
                     d_dict = drive.to_dict()
@@ -173,16 +180,13 @@ class GetStudentFullDetails(Resource):
             
             u_dict = user.to_dict()
             if user.student_profile:
-                # Add basic student profile
                 u_dict['student_profile'] = user.student_profile.to_dict()
                 
-                # Add applications with nested drive and company info
                 apps_data = []
                 for app in user.student_profile.applications:
                     a_dict = app.to_dict()
                     if app.target_drive:
                         d_dict = app.target_drive.to_dict()
-                        # Include company name for the UI
                         if app.target_drive.company_owner:
                             d_dict['company_owner'] = {
                                 'company_name': app.target_drive.company_owner.company_profile.company_name 
@@ -201,8 +205,10 @@ class GetStudentFullDetails(Resource):
             return {"status": "error", "message": str(e)}, 500
 
 
+
 class AdminManageDrives(Resource):
     @admin_required
+
     def get(self):
         """Fetch all drives for the list view (DriveDirectory)"""
         search = request.args.get('search', '')
@@ -308,6 +314,7 @@ class ApproveDrive(Resource):
 
             drive.status = new_status
             db.session.commit()
+
             
             return {
                 "status": "success",

@@ -95,20 +95,12 @@ def send_daily_remainder():
 
 @celery_app.task
 def send_monthly_report():
-    """
-    Generates a monthly placement activity report for the past month
-    and emails it directly to the platform administrator.
-    """
     now = datetime.now()
     
-    # Calculate the first and last day of the PREVIOUS month
     first_day_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_day_prev_month = first_day_this_month - timedelta(days=1)
     first_day_prev_month = last_day_prev_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    
     month_name = first_day_prev_month.strftime('%B %Y')
-
-    # --- 1. Fetch Metrics ---
     drives_count = PlacementDrive.query.filter(
         PlacementDrive.deadline >= first_day_prev_month,
         PlacementDrive.deadline <= last_day_prev_month
@@ -125,14 +117,12 @@ def send_monthly_report():
         Application.status == 'Selected' 
     ).count()
 
-    # --- 2. Target the Single Admin ---
-    # Using .first() because there is only one system admin
     admin = User.query.filter(User.role == 'admin', User.is_approved == True).first()
     
     if not admin:
         return "Report generation canceled: Admin account not found or not approved."
 
-    # --- 3. Build & Dispatch Email ---
+    #=========email making part-==================
     msg = MIMEMultipart()
     msg['From'] = SENDER_EMAIL
     msg['To'] = admin.email
@@ -164,13 +154,12 @@ def send_monthly_report():
 def ExportApplications(student_id, student_email, student_name):
     apps = Application.query.filter_by(student_id=student_id).all()
     
-    # 2. Write CSV to memory
+    #===csv fillig=============
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Student ID", "Company Name", "Drive Title", "Application Status", "Date Applied"])
     
     for app_entry in apps:
-        # Added safety checks in case relationships are None
         company_name = app_entry.target_drive.company_owner.company_name if app_entry.target_drive and app_entry.target_drive.company_owner else "N/A"
         drive_title = app_entry.target_drive.job_title if app_entry.target_drive else "N/A"
         date_applied = app_entry.applied_on.strftime('%Y-%m-%d') if app_entry.applied_on else "N/A"
@@ -184,14 +173,13 @@ def ExportApplications(student_id, student_email, student_name):
         ])
         
     csv_data = output.getvalue()
-    
-    # 3. Prepare Email
+    #===farmaing the email=============
     msg = MIMEMultipart()
     msg['From'] = SENDER_EMAIL
     msg['To'] = student_email
     msg['Subject'] = "Your Placement Application History - PlaceMeFirst"
     
-    # Professional HTML Body
+    # making html for attaching in the email =====================
     email_body = f"""
     <html>
         <body>
@@ -208,13 +196,9 @@ def ExportApplications(student_id, student_email, student_name):
     </html>
     """
     msg.attach(MIMEText(email_body, 'html'))
-    
-    # 4. Attach CSV
     part = MIMEApplication(csv_data.encode('utf-8'), Name="application_history.csv")
     part['Content-Disposition'] = 'attachment; filename="application_history.csv"'
     msg.attach(part)
-    
-    # 5. Send
     try:
         server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
         server.send_message(msg)

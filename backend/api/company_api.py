@@ -5,7 +5,7 @@ from datetime import datetime
 from auth import company_required
 from models import db, User, PlacementDrive, Application, Student
 
-# --- NEW: Company Dashboard API ---
+
 class CompanyDashboard(Resource):
     @company_required
     def get(self):
@@ -17,7 +17,6 @@ class CompanyDashboard(Resource):
             if not user or not user.company_profile:
                 return {"status": "error", "message": "Company profile not found"}, 404
             
-            # Get all drives for this company
             drives = PlacementDrive.query.filter_by(company_id=user.company_profile.id).all()
             
             return {
@@ -28,7 +27,6 @@ class CompanyDashboard(Resource):
         except Exception as e:
             return {"status": "error", "message": f"Error loading dashboard: {str(e)}"}, 500
 
-# --- EXISTING RESOURCES ---
 
 class CreateDrive(Resource):
     @company_required
@@ -57,7 +55,8 @@ class CreateDrive(Resource):
             )
             db.session.add(new_drive)
             db.session.commit()
-            
+
+
             return {
                 "status": "success",
                 "message": f"Drive {new_drive.job_title} created successfully",
@@ -139,7 +138,6 @@ class GetSelectedCandidates(Resource):
             if not user or not user.company_profile:
                 return {"status": "error", "message": "Company profile not found"}, 404
             
-            # Query applications where status is 'Selected' AND the drive belongs to this company
             selected_apps = Application.query.join(PlacementDrive).filter(
                 Application.status == 'Selected',
                 PlacementDrive.company_id == user.company_profile.id

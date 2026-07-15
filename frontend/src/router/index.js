@@ -142,7 +142,7 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'admin' }
     },
     {
-      path: '/admin/drives/:id',
+      path: '/admin/drive/:id',
       name: 'DriveProfile',
       component: () => import('../views/DriveProfile.vue'),
       meta: { requiresAuth: true, role: 'admin' }

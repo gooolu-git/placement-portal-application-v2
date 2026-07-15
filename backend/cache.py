@@ -1,3 +1,3 @@
-from flask_caching import Cache
+from extension import create_app
 
-cache = Cache()
+cache = create_app()
